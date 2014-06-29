@@ -76,13 +76,18 @@ angular.module('raw.directives', [])
 	      link: function postLink(scope, element, attrs) {
 
 	        scope.scales = [ 
-	        	
+	        	{
+	        		type : 'Linear (numeric)',
+	        		value : d3.scale.linear().range(["#f7fbff", "#08306b"]),
+	        		reset : function(){ this.value.range(["#f7fbff", "#08306b"]); },
+	        		update : linearUpdate
+	        	},
 	        	{
 	        		type : 'Ordinal (categories)',
 	        		value : d3.scale.ordinal().range(raw.divergingRange(1)),
 	        		reset : function(domain){ this.value.range(raw.divergingRange(domain.length || 1)); },
 	        		update : ordinalUpdate
-	        	},
+	        	}
 	        	/*{
 	        		type : 'Ordinal (max 20 categories)',
 	        		value : d3.scale.category20(),
@@ -107,12 +112,7 @@ angular.module('raw.directives', [])
 	        		reset : function(){ this.value.range(d3.scale.category10().range().map(function (d){ return d; })); },
 	        		update : ordinalUpdate
 	        	},*/
-	        	{
-	        		type : 'Linear (numeric)',
-	        		value : d3.scale.linear().range(["#f7fbff", "#08306b"]),
-	        		reset : function(){ this.value.range(["#f7fbff", "#08306b"]); },
-	        		update : linearUpdate
-	        	}
+
 	        ];
 
 	        function ordinalUpdate(domain) {

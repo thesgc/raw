@@ -12,6 +12,7 @@
 
     var label = tree.dimension('label')
        .title('X Axis and Label')
+       .types(Number, String)
      
     var hierarchy = tree.dimension('hierarchy')
        .title('Hierarchy')
@@ -26,7 +27,7 @@
 
 	tree.map(function (data){
 		
-      var root = { children : [], xdata:[], raw : data };
+      var root = { children : [], xdata:[], raw : data, name:"" };
       //assume that there is 
 
       var labels = d3.set([]);
@@ -36,12 +37,10 @@
 
         var leaf = seek(root, hierarchy(d), hierarchy());
         if(leaf === false || !leaf) return;
-        //We have got to the bottom of the Y axis tree, now we must push this data point to the x axis data for this leaf
-        //Hack - adding one element to the array because there is already a circle there when we add more circles to the node
-        if (!leaf.xdata) leaf.xdata = [{}];
+        if (!leaf.xdata) leaf.xdata = [];
         var xdatum = {};
 
-        xdatum.size = size() ? +size(d) : 0;
+        xdatum.size = size() ? +size(d) : 1;
 
         xdatum.color = color(d);
         xdatum.label = label(d);
@@ -91,19 +90,24 @@
 	
 	var height = chart.number()
 		.title("Height")
-		.defaultValue(500);
+		.defaultValue(800);
 
 	var padding = chart.number()
 		.title("Padding")
-		.defaultValue(5);
+		.defaultValue(20);
 
 
+
+  var maxRadius = chart.number()
+      .title("max radius")
+      .defaultValue(8);
 
 
 	chart.draw(function (selection, data){
 //tree is the right data model - the last node in the tree is the Y axis
 	
-		var xScale = d3.scale.ordinal().domain(data.labels).rangePoints([0, width()/2], 0);
+
+
 		var g = selection
             .attr("width", +width() )
             .attr("height", +height() )
@@ -111,15 +115,14 @@
                 .attr("transform", "translate(40,0)");
 
 
-        colors.domain(data.raw, function(d){ return d.color; });
+        colors.domain(data.raw, function(d){ return color(d); });
         var marginBottom = 20,
-			h = height() - marginBottom;
+			h = height()*0.7 ;
 
-		var maxRadius = chart.number()
-			.title("max radius")
-			.defaultValue(20);
+
+
         var layout = d3.layout.tree()
-            .size([+height(), +width()/4]);
+            .size([+h, +width()/6]);
 
         var diagonal = d3.svg.diagonal()
             .projection(function (d) { return [d.y, d.x]; });
@@ -127,55 +130,94 @@
         var nodes = layout.nodes(data),
             links = layout.links(nodes);
 
+// var xScale = x.type() == "Date"
+//         ? d3.time.scale().range([marginLeft,width()-maxRadius()]).domain(xExtent)
+//         : d3.scale.linear().range([marginLeft,width()-maxRadius()]).domain(xExtent)
+      var arrayOfNumbers = data.labels.map(Number);
+      
+      var xScale = null
+        if (label.type() == "Date"){
+            xScale =  d3.time.scale().range([0, width()*0.6 -padding()]).domain([0, d3.max(arrayOfNumbers)]);
+        } else if (label.type() == "String"){
+            xScale = d3.scale.ordinal().domain(data.labels.sort()).rangePoints([padding(), width()*0.6],0);
+
+        } else {
+            xScale = d3.scale.linear().range([0, width()*0.6 -padding()]).domain([0, d3.max(arrayOfNumbers)]);
+        }
+     
+
+    //var xScale = d3.scale.ordinal().domain(data.labels).rangePoints([padding(), width()*0.6],0);
+     var   sizeScale = d3.scale.linear().range([1, maxRadius()*2]).domain([0, d3.max(data.raw, function (d){ return size(d); })]);
+
+
         var link = g.selectAll("path.link")
             .data(links)
             .enter().append("path")
                 .attr("class", "link")
                 .style("fill","none")
-                .style("stroke","#cccccc")
-                .style("stroke-width","1px")
+                .style("stroke-width",function(d){
+                  if (d.source.name==="" ) 
+                    { 
+                      return "0px" 
+                    } 
+                     return "1px" 
+                  })
+                .style("stroke",  "#ccc" )
                 .attr("d", diagonal);
 
         var node = g.selectAll("g.node")
             .data(nodes)
             .enter().append("g")
                 .attr("class", "node")
-                .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+                .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
 
         
-        var xAxis = d3.svg.axis().scale(xScale).tickSize(-h+maxRadius()*2).orient("bottom")
+        var xAxis = d3.svg.axis().scale(xScale).tickSize(-h*0.8).orient("bottom");
 
         g.append("g")
             .attr("class", "x axis")
             .style("stroke-width", "1px")
         	.style("font-size","10px")
         	.style("font-family","Arial, Helvetica")
-            .attr("transform", "translate(" + width()/4 + "," + (h-maxRadius()) + ")")
-            .call(xAxis);
+            .attr("transform", "translate(" + width()/6 + "," + (h-marginBottom + padding()) + ")")
+            .call(xAxis)
+            .selectAll("text")  
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", function(d) {
+                return "rotate(-65)" 
+                });
 
+
+
+        node.append(  "svg:line")
+            .attr("x1", 0)
+            .attr("x2", function(d){ return d.children ?  0 : width()*0.6;}).style("stroke","#ccc");
         node.append("text")
-            //.attr("dx", function(d) { return d.children ? -8 : -8; })
-            .attr("dx", -8 )
+            .attr("dx", function(d) { return d.children ?   -8  : width()*0.6; })
+            //.attr("dx", -8 )
             .attr("dy", 3)
             .style("font-size","11px")
             .style("font-family","Arial, Helvetica")
-            //.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-            .attr("text-anchor", "end" )
+            .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+            //.attr("text-anchor", "end" )
             .text(function (d){ return d.name; });
 
-        node.append("circle")
-            .style("fill", "#eeeeee")
-            .style("stroke","#999999")
-            .style("stroke-width","1px")
-            .attr("r", 4.5);
+        // node.append("circle")
+        //     .style("fill", "#eeeeee")
+        //     .style("stroke","#999999")
+        //     .style("stroke-width","1px")
+        //     .attr("r", 4.5);
         var selectcircles = node.selectAll("circle").data(function(d){ if (typeof(d.xdata) != "undefined"  ) { return d.xdata} return [] }).enter();
 
 		d3.selectAll("x.axis line, .x.axis path")
          	.style("shape-rendering","crispEdges")
-         	.style("fill","none")
-         	.style("stroke","#ccc");
+         	.style("fill","none");
+         	//.style("stroke","#ccc");
 
-        selectcircles.append("circle").attr("r",10)
+        selectcircles.append("circle")
+        .attr("r", function (d){ return sizeScale(d.size) })
         .attr("transform", function(data) { return "translate(" + xScale(data.label) + "," + 0 + ")"; })
         .style("fill", function(d) { return colors() ? colors()(d.color) : "#eeeeee"; });
 
