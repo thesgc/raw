@@ -2,7 +2,17 @@
 
 	var tree = raw.model();
 
+var joiner = function(object, glue, separator) {
 
+ 
+if (glue == undefined)
+glue = '=';
+ 
+if (separator == undefined)
+separator = ',';
+ 
+return $.map(Object.getOwnPropertyNames(object), function(k) { return [k, object[k]].join(glue) }).join(separator);
+}
     
     var color = tree.dimension('color')
        .title('Color')
@@ -41,7 +51,7 @@
         var xdatum = {};
 
         xdatum.size = size() ? +size(d) : 1;
-
+        xdatum.all = d;
         xdatum.color = color(d);
         xdatum.label = label(d);
         leaf.xdata.push(xdatum);
@@ -219,6 +229,7 @@
         selectcircles.append("circle")
         .attr("r", function (d){ return sizeScale(d.size) })
         .attr("transform", function(data) { return "translate(" + xScale(data.label) + "," + 0 + ")"; })
+        .attr("title",  function(d) { return joiner(d.all, ": ","\n" )})
         .style("fill", function(d) { return colors() ? colors()(d.color) : "#eeeeee"; });
 
 
