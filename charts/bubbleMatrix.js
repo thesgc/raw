@@ -205,7 +205,7 @@ return $.map(Object.getOwnPropertyNames(object), function(k) { return [k, object
             .attr("x1", 0)
             .attr("x2", function(d){ return d.children ?  0 : width()*0.6;}).style("stroke","#ccc");
         node.append("text")
-            .attr("dx", function(d) { return d.children ?   -8  : width()*0.6; })
+            .attr("dx", function(d) { return d.children ?   -8  : width()*0.6 + padding(); })
             //.attr("dx", -8 )
             .attr("dy", 3)
             .style("font-size","11px")
@@ -228,7 +228,7 @@ return $.map(Object.getOwnPropertyNames(object), function(k) { return [k, object
 
         selectcircles.append("circle")
         .attr("r", function (d){ return sizeScale(d.size) })
-        .attr("transform", function(data) { return "translate(" + xScale(data.label) + "," + 0 + ")"; })
+        .attr("transform", function(data) { return "translate(" + (xScale(data.label) ) + "," + 0 + ")"; })
         .attr("title",  function(d) { return joiner(d.all, ": ","\n" )})
         .style("fill", function(d) { return colors() ? colors()(d.color) : "#eeeeee"; });
 

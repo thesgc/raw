@@ -32,7 +32,7 @@ angular.module('raw.directives', [])
 
 	        }
 
-	        scope.delayUpdate = dataService.debounce(update, 300, false);
+	        scope.delayUpdate = dataService.debounce(update, 100, false);
 
 	        scope.$watch('chart', update);
 	        scope.$on('update', update);
@@ -119,6 +119,7 @@ angular.module('raw.directives', [])
 	        	if (!domain.length) domain = [null];
 	        	this.value.domain(domain);
 	        	listColors();
+	        	$rootScope.$broadcast("update");
 	        }
 
 	        function linearUpdate(domain) {
@@ -126,6 +127,7 @@ angular.module('raw.directives', [])
 	        	if (domain[0]==domain[1]) domain = [null];
 	        	this.value.domain(domain).interpolate(d3.interpolateLab);
 	        	listColors();
+	        	//$rootScope.$broadcast("update");
 	        }
 
 	        scope.setScale = function(){
@@ -157,6 +159,7 @@ angular.module('raw.directives', [])
 	        		if (raw.isNumber(a.key) && raw.isNumber(b.key)) return a.key - b.key;
 	        		return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
     				})
+
 	        }
 
 	        scope.setColor = function(key, color) {
