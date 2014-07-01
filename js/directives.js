@@ -32,7 +32,7 @@ angular.module('raw.directives', [])
 
 	        }
 
-	        scope.delayUpdate = dataService.debounce(update, 300, false);
+	        scope.delayUpdate = dataService.debounce(update, 100, false);
 
 	        scope.$watch('chart', update);
 	        scope.$on('update', update);
@@ -76,13 +76,18 @@ angular.module('raw.directives', [])
 	      link: function postLink(scope, element, attrs) {
 
 	        scope.scales = [ 
-	        	
+	        	{
+	        		type : 'Linear (numeric)',
+	        		value : d3.scale.linear().range(["#f7fbff", "#08306b"]),
+	        		reset : function(){ this.value.range(["#f7fbff", "#08306b"]); },
+	        		update : linearUpdate
+	        	},
 	        	{
 	        		type : 'Ordinal (categories)',
 	        		value : d3.scale.ordinal().range(raw.divergingRange(1)),
 	        		reset : function(domain){ this.value.range(raw.divergingRange(domain.length || 1)); },
 	        		update : ordinalUpdate
-	        	},
+	        	}
 	        	/*{
 	        		type : 'Ordinal (max 20 categories)',
 	        		value : d3.scale.category20(),
@@ -107,18 +112,14 @@ angular.module('raw.directives', [])
 	        		reset : function(){ this.value.range(d3.scale.category10().range().map(function (d){ return d; })); },
 	        		update : ordinalUpdate
 	        	},*/
-	        	{
-	        		type : 'Linear (numeric)',
-	        		value : d3.scale.linear().range(["#f7fbff", "#08306b"]),
-	        		reset : function(){ this.value.range(["#f7fbff", "#08306b"]); },
-	        		update : linearUpdate
-	        	}
+
 	        ];
 
 	        function ordinalUpdate(domain) {
 	        	if (!domain.length) domain = [null];
 	        	this.value.domain(domain);
 	        	listColors();
+	        	$rootScope.$broadcast("update");
 	        }
 
 	        function linearUpdate(domain) {
@@ -126,6 +127,7 @@ angular.module('raw.directives', [])
 	        	if (domain[0]==domain[1]) domain = [null];
 	        	this.value.domain(domain).interpolate(d3.interpolateLab);
 	        	listColors();
+	        	//$rootScope.$broadcast("update");
 	        }
 
 	        scope.setScale = function(){
@@ -157,6 +159,7 @@ angular.module('raw.directives', [])
 	        		if (raw.isNumber(a.key) && raw.isNumber(b.key)) return a.key - b.key;
 	        		return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
     				})
+
 	        }
 
 	        scope.setColor = function(key, color) {
