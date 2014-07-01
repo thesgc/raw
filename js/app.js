@@ -12,9 +12,10 @@ angular.module('raw', [
   'ui',
   'colorpicker.module'
 ])
-
 .config(['$routeProvider','$locationProvider', function ($routeProvider,$locationProvider) {
   $routeProvider.when('/', {templateUrl: 'partials/main.html', controller: 'RawCtrl'});
   $routeProvider.otherwise({redirectTo: '/'});
   $locationProvider.html5Mode(true);
+  $httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
 }]);
